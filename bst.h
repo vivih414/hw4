@@ -5,6 +5,7 @@
 #include <exception>
 #include <cstdlib>
 #include <utility>
+#include <functional>
 
 /**
  * A templated class for a Node in a search tree.
@@ -267,6 +268,7 @@ template<class Key, class Value>
 BinarySearchTree<Key, Value>::iterator::iterator(Node<Key,Value> *ptr)
 {
     // TODO
+	current_ = ptr;
 }
 
 /**
@@ -276,7 +278,7 @@ template<class Key, class Value>
 BinarySearchTree<Key, Value>::iterator::iterator() 
 {
     // TODO
-
+	current_ = nullptr;
 }
 
 /**
@@ -309,6 +311,7 @@ BinarySearchTree<Key, Value>::iterator::operator==(
     const BinarySearchTree<Key, Value>::iterator& rhs) const
 {
     // TODO
+	return current_ == rhs.current_;
 }
 
 /**
@@ -321,7 +324,7 @@ BinarySearchTree<Key, Value>::iterator::operator!=(
     const BinarySearchTree<Key, Value>::iterator& rhs) const
 {
     // TODO
-
+	return current_ != rhs.current_;
 }
 
 
@@ -333,7 +336,30 @@ typename BinarySearchTree<Key, Value>::iterator&
 BinarySearchTree<Key, Value>::iterator::operator++()
 {
     // TODO
+	if(current_ == nullptr)
+	{
+		return *this;
+	}
 
+	if(current_->getRight() != nullptr)
+	{
+		current_ = current_->getRight();
+		while(current_->getLeft() != nullptr)
+		{
+			current_ = current_->getLeft();
+		}
+	}
+	else
+	{
+		Node<Key, Value>* parent = current_->getParent();
+		while(parent != nullptr && current_ == parent->getRight())
+		{
+			current_ = parent;
+			parent = parent->getParent();
+		}
+		current_ = parent;
+	}
+	return *this;
 }
 
 
@@ -356,13 +382,14 @@ template<class Key, class Value>
 BinarySearchTree<Key, Value>::BinarySearchTree() 
 {
     // TODO
+	root_ = nullptr;
 }
 
 template<typename Key, typename Value>
 BinarySearchTree<Key, Value>::~BinarySearchTree()
 {
     // TODO
-
+	clear();
 }
 
 /**
@@ -378,7 +405,7 @@ template<typename Key, typename Value>
 void BinarySearchTree<Key, Value>::print() const
 {
     printRoot(root_);
-    std::cout << "\n";
+ 		std::cout << "\n";
 }
 
 /**
@@ -445,8 +472,43 @@ template<class Key, class Value>
 void BinarySearchTree<Key, Value>::insert(const std::pair<const Key, Value> &keyValuePair)
 {
     // TODO
-}
+		if(root_ == nullptr)
+		{
+			root_ = new Node<Key, Value>(keyValuePair.first, keyValuePair.second, nullptr);
+			return;
+		}
 
+		Node<Key, Value>* current = root_;
+		Node<Key, Value>* parent = nullptr;
+
+		while(current != nullptr)
+		{
+			parent = current;
+			if(keyValuePair.first < current->getKey())
+			{
+				current = current->getLeft();
+			}
+			else if(keyValuePair.first > current->getKey())
+			{
+				current = current->getRight();
+			}
+			else
+			{
+				current->setValue(keyValuePair.second);
+				return;
+			}
+		}
+
+		Node<Key, Value>* newNode = new Node<Key, Value>(keyValuePair.first, keyValuePair.second, parent);
+		if(keyValuePair.first < parent->getKey())
+		{
+			parent->setLeft(newNode);
+		}
+		else
+		{
+			parent->setRight(newNode);
+		}
+}
 
 /**
 * A remove method to remove a specific key from a Binary Search Tree.
@@ -457,6 +519,55 @@ template<typename Key, typename Value>
 void BinarySearchTree<Key, Value>::remove(const Key& key)
 {
     // TODO
+		Node<Key, Value>* nodeRemove = internalFind(key);
+		if(nodeRemove == nullptr)
+		{
+			return;
+		}
+		
+		if(nodeRemove->getLeft() != nullptr && nodeRemove->getRight() != nullptr)
+		{
+			Node<Key, Value>* pre = predecessor(nodeRemove);
+			if(pre == nullptr)
+			{
+				return;
+			}
+			nodeSwap(nodeRemove, pre);
+		}
+
+		Node<Key, Value>* child;
+		if(nodeRemove->getLeft() != nullptr)
+		{
+			child = nodeRemove->getLeft();
+		}
+		else
+		{
+			child = nodeRemove->getRight();
+		}
+
+		Node<Key, Value>* parent = nodeRemove->getParent();
+
+		if(child != nullptr)
+		{
+			child->setParent(parent);
+		}
+		if(nodeRemove == root_)
+		{
+			root_ = child;
+		}
+		else if(parent != nullptr)
+		{
+			if(nodeRemove == parent->getLeft())
+			{
+				parent->setLeft(child);
+			}
+			else
+			{
+				parent->setRight(child);
+			}
+		}
+	
+		delete nodeRemove;
 }
 
 
@@ -466,6 +577,27 @@ Node<Key, Value>*
 BinarySearchTree<Key, Value>::predecessor(Node<Key, Value>* current)
 {
     // TODO
+		if(current == nullptr)
+		{
+			return nullptr;
+		}
+		if(current->getLeft() != nullptr)
+		{
+			Node<Key, Value>* temp = current->getLeft();
+			while(temp->getRight() != nullptr)
+			{
+				temp = temp->getRight();
+			}
+			return temp;
+		}
+
+		Node<Key, Value>* temp = current->getParent();
+		while(temp != nullptr && current == temp->getLeft())
+		{
+			current = temp;
+			temp = temp->getParent();
+		}
+		return temp;
 }
 
 
@@ -477,6 +609,18 @@ template<typename Key, typename Value>
 void BinarySearchTree<Key, Value>::clear()
 {
     // TODO
+	std::function<void(Node<Key, Value>*)> deleteNodes = [&](Node<Key, Value>* node)
+	{
+		if(node == nullptr)
+		{
+			return;
+		}
+		deleteNodes(node->getLeft());
+		deleteNodes(node->getRight());
+		delete node;
+	};
+	deleteNodes(root_);
+	root_ = nullptr;
 }
 
 
@@ -488,6 +632,16 @@ Node<Key, Value>*
 BinarySearchTree<Key, Value>::getSmallestNode() const
 {
     // TODO
+	if(root_ == nullptr)
+	{
+		return nullptr;
+	}
+	Node<Key, Value>* current = root_;
+	while(current->getLeft() != nullptr)
+	{
+		current = current->getLeft();
+	}
+	return current;
 }
 
 /**
@@ -499,6 +653,24 @@ template<typename Key, typename Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::internalFind(const Key& key) const
 {
     // TODO
+	Node<Key, Value>* current = root_;
+
+	while(current != nullptr)
+	{
+		if(key == current->getKey())
+		{
+			return current;
+		}
+		else if(key < current->getKey())
+		{
+			current = current->getLeft();
+		}
+		else
+		{
+			current = current->getRight();
+		}
+	}
+	return nullptr;
 }
 
 /**
@@ -508,6 +680,26 @@ template<typename Key, typename Value>
 bool BinarySearchTree<Key, Value>::isBalanced() const
 {
     // TODO
+	std::function<int(Node<Key, Value>*)> heightCheck = [&](Node<Key, Value>* node)->int
+	{
+		if(node == nullptr)
+		{
+			return 0;
+		}
+		int heightL = heightCheck(node->getLeft());
+		int heightR = heightCheck(node->getRight());
+
+		if(heightL == -1 || heightR == -1)
+		{
+			return -1;
+		}
+		if(std::abs(heightL - heightR) > 1)
+		{
+			return -1;
+		}
+		return std::max(heightL, heightR) + 1;
+	};
+	return heightCheck(root_) != -1;
 }
 
 

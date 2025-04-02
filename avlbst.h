@@ -137,8 +137,9 @@ protected:
     virtual void nodeSwap( AVLNode<Key,Value>* n1, AVLNode<Key,Value>* n2);
 
     // Add helper functions here
-
-
+		void rebalanced(AVLNode<Key, Value>* node);
+		void left(AVLNode<Key, Value>* node);
+		void right(AVLNode<Key, Value>* node);
 };
 
 /*
@@ -149,6 +150,45 @@ template<class Key, class Value>
 void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
 {
     // TODO
+		// AVLNode<Key, Value>* root = static_cast<AVLNode<Key, Value>*>(this->root_);
+		// AVLNode<Key, Value>* parent = nullptr;
+		// AVLNode<Key, Value>* current = root;
+		
+		// while(current != nullptr)
+		// {
+		// 	parent = current;
+		// 	if(new_item.first < current->getKey())
+		// 	{
+		// 		current = current->getLeft();
+		// 	}
+		// 	else if(new_item.first > current->getKey())
+		// 	{
+		// 		current = current->getRight();
+		// 	}
+		// 	else
+		// 	{
+		// 		current->setValue(new_item.second);
+		// 		return;
+		// 	}
+		// }
+
+
+		// AVLNode<Key, Value>* newNode = new AVLNode<Key, Value>(new_item.first, new_item.second, parent);
+	
+		// if(parent == nullptr)
+		// {
+		// 	this->root_ = newNode;
+		// }
+		// else if(new_item.first < parent->getKey())
+		// {
+		// 	parent->left_ = newNode;
+		// }
+		// else
+		// {
+		// 	parent->right_ = newNode;
+		// }
+
+		// rebalanced(newNode);
 }
 
 /*
@@ -159,6 +199,156 @@ template<class Key, class Value>
 void AVLTree<Key, Value>:: remove(const Key& key)
 {
     // TODO
+		// AVLNode<Key, Value>* node = static_cast<AVLNode<Key, Value>*>(this->internalFind(key));
+
+		// if(node == nullptr)
+		// {
+		// 	return;
+		// }
+		// if(node->getLeft() && node->getRight())
+		// {
+		// 	AVLNode<Key, Value>* pre = static_cast<AVLNode<Key, Value>*>(this->predecessor(node));
+		// 	nodeSwap(node, pre);
+		// }
+
+		// AVLNode<Key, Value>* child;
+		// if(node->getLeft())
+		// {
+		// 	child = node->getLeft();
+		// }
+		// else
+		// {
+		// 	child = node->getRight();
+		// }
+
+		// AVLNode<Key, Value>* parent = node->getParent();
+
+		// if(child != nullptr)
+		// {
+		// 	child->parent_ = parent;
+		// }
+		// if(parent == nullptr)
+		// {
+		// 	this->root_ = child;
+		// }
+		// else if(node == parent->getLeft())
+		// {
+		// 	parent->left_ = child;
+		// }
+		// else
+		// {
+		// 	parent->right_ = child;
+		// }
+
+		// delete node;
+		// rebalanced(parent);
+}
+
+template<class Key, class Value>
+void AVLTree<Key, Value>::rebalanced(AVLNode<Key, Value>* node)
+{
+	//  AVLNode<Key, Value>* parent = node->getParent();
+
+	// while(parent != nullptr)
+	// {
+	// 	if(node == parent->getLeft())
+	// 	{
+	// 		parent->updateBalance(-1);
+	// 	}
+	// 	else
+	// 	{
+	// 		parent->updateBalance(1);
+	// 	}
+
+	// 	if(parent->getBalance() == 0)
+	// 	{
+	// 		break;
+	// 	}
+
+	// 	if(parent->getBalance() == -2)
+	// 	{
+	// 		if(node->getBalance() == 1)
+	// 		{
+	// 			left(node);
+	// 		}
+
+	// 		right(parent);
+	// 		break;
+	// 	}
+	// 	else if(parent->getBalance() == 2)
+	// 	{
+	// 		if(node->getBalance() == -1)
+	// 		{
+	// 			right(node);
+	// 		}
+
+	// 		left(parent);
+	// 		break;
+	// 	}
+
+	// 	node = parent;
+	// 	parent = node->getParent();
+	// }
+}
+
+template<class Key, class Value>
+void AVLTree<Key, Value>::left(AVLNode<Key, Value>* node)
+{
+	AVLNode<Key, Value>* childR = node->getRight();
+	node->right_ = childR->getLeft();
+
+	if(childR->getLeft())
+	{
+		childR->getLeft()->parent_ = node;
+	}
+
+	childR->parent_ = node->getParent();
+
+	if(!node->getParent())
+	{
+		this->root_ = childR;
+	}
+	else if(node == node->getParent()->getLeft())
+	{
+		node->getParent()->left_ = childR;
+	}
+	else
+	{
+		node->getParent()->right_ = childR;
+	}
+
+	childR->left_ = node;
+	node->parent_ = childR;
+}
+
+template<class Key, class Value>
+void AVLTree<Key, Value>::right(AVLNode<Key, Value>* node)
+{
+	AVLNode<Key, Value>* childL = node->getLeft();
+	node->left_ = childL->getRight();
+
+	if(childL->getRight())
+	{
+		childL->getRight()->parent_ = node;
+	}
+
+	childL->parent_ = node->getParent();
+
+	if(!node->getParent())
+	{
+		this->root_ = childL;
+	}
+	else if(node == node->getParent()->getRight())
+	{
+		node->getParent()->right_ = childL;
+	}
+	else
+	{
+		node->getParent()->left_ = childL;
+	}
+
+	childL->right_ = node;
+	node->parent_ = childL;
 }
 
 template<class Key, class Value>
